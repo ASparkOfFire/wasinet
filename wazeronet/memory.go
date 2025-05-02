@@ -3,7 +3,7 @@ package wazeronet
 import (
 	"unsafe"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
 )
 
 type memory interface {

@@ -5,7 +5,7 @@ package wazeronet
 import (
 	"context"
 
-	"github.com/egdaemon/wasinet/wasinet/wnetruntime"
+	"github.com/asparkoffire/wasinet/wasinet/wnetruntime"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 )
