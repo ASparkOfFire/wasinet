@@ -36,8 +36,18 @@ type Socket interface {
 	Shutdown(ctx context.Context, fd, how int) error
 	AddrIP(ctx context.Context, network string, address string) ([]net.IP, error)
 	AddrPort(ctx context.Context, network string, service string) (int, error)
+	GetAddrInfo(ctx context.Context, node, service string, hints *AddrInfo) ([]AddrInfo, error)
 	RecvFrom(ctx context.Context, fd int, vecs [][]byte, oob []byte, flags int) (int, int, unix.Sockaddr, error)
 	SendTo(ctx context.Context, fd int, sa unix.Sockaddr, vecs [][]byte, oob []byte, flags int) (int, error)
+}
+
+// AddrInfo represents address information similar to struct addrinfo in C
+type AddrInfo struct {
+	Flags    int32
+	Family   int32
+	SockType int32
+	Protocol int32
+	Addr     unix.Sockaddr
 }
 
 type IP interface {
@@ -162,6 +172,165 @@ func (t network) AddrIP(ctx context.Context, network string, address string) ([]
 func (t network) AddrPort(ctx context.Context, network string, service string) (int, error) {
 	// slog.Log(ctx, slog.LevelDebug, "sock_getaddrport", slog.String("network", network), slog.String("service", service))
 	return net.DefaultResolver.LookupPort(ctx, network, service)
+}
+
+func (t network) GetAddrInfo(ctx context.Context, node, service string, hints *AddrInfo) ([]AddrInfo, error) {
+	// Convert node and service to IP addresses and ports
+	var err error
+	var network string
+
+	// Determine network type from hints
+	if hints != nil {
+		switch hints.Family {
+		case unix.AF_INET:
+			network = "ip4"
+		case unix.AF_INET6:
+			network = "ip6"
+		default:
+			network = "ip"
+		}
+	} else {
+		network = "ip"
+	}
+
+	// If node is empty and service is not, lookup service port first
+	if node == "" && service != "" {
+		port, err := t.AddrPort(ctx, network, service)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create appropriate socket address for loopback
+		var result []AddrInfo
+
+		// Add IPv4 loopback if family allows it
+		if hints == nil || hints.Family == unix.AF_INET || hints.Family == unix.AF_UNSPEC {
+			addr := &unix.SockaddrInet4{Port: port}
+			addr.Addr[0] = 127
+			addr.Addr[3] = 1
+
+			info := AddrInfo{
+				Family:   unix.AF_INET,
+				SockType: hints.SockType,
+				Protocol: hints.Protocol,
+				Addr:     addr,
+			}
+			result = append(result, info)
+		}
+
+		// Add IPv6 loopback if family allows it
+		if hints == nil || hints.Family == unix.AF_INET6 || hints.Family == unix.AF_UNSPEC {
+			addr := &unix.SockaddrInet6{Port: port}
+			addr.Addr[15] = 1 // ::1
+
+			info := AddrInfo{
+				Family:   unix.AF_INET6,
+				SockType: hints.SockType,
+				Protocol: hints.Protocol,
+				Addr:     addr,
+			}
+			result = append(result, info)
+		}
+
+		return result, nil
+	}
+
+	// Try to parse node as IP address first
+	if ip := net.ParseIP(node); ip != nil {
+		// Create appropriate sockaddr based on IP version
+		var result []AddrInfo
+
+		if ip.To4() != nil && (hints == nil || hints.Family == unix.AF_INET || hints.Family == unix.AF_UNSPEC) {
+			// IPv4 address
+			var port int
+			if service != "" {
+				port, err = t.AddrPort(ctx, network, service)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			addr := &unix.SockaddrInet4{Port: port}
+			copy(addr.Addr[:], ip.To4())
+
+			info := AddrInfo{
+				Family:   unix.AF_INET,
+				SockType: hints.SockType,
+				Protocol: hints.Protocol,
+				Addr:     addr,
+			}
+			result = append(result, info)
+		} else if hints == nil || hints.Family == unix.AF_INET6 || hints.Family == unix.AF_UNSPEC {
+			// IPv6 address
+			var port int
+			if service != "" {
+				port, err = t.AddrPort(ctx, network, service)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			addr := &unix.SockaddrInet6{Port: port}
+			copy(addr.Addr[:], ip.To16())
+
+			info := AddrInfo{
+				Family:   unix.AF_INET6,
+				SockType: hints.SockType,
+				Protocol: hints.Protocol,
+				Addr:     addr,
+			}
+			result = append(result, info)
+		}
+
+		return result, nil
+	}
+
+	// Look up the hostname
+	ips, err := t.AddrIP(ctx, network, node)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the service port if provided
+	var port int
+	if service != "" {
+		port, err = t.AddrPort(ctx, network, service)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Create AddrInfo entries for each resolved IP
+	var result []AddrInfo
+	for _, ip := range ips {
+		if ip.To4() != nil && (hints == nil || hints.Family == unix.AF_INET || hints.Family == unix.AF_UNSPEC) {
+			// IPv4 address
+			addr := &unix.SockaddrInet4{Port: port}
+			copy(addr.Addr[:], ip.To4())
+
+			info := AddrInfo{
+				Family:   unix.AF_INET,
+				SockType: hints.SockType,
+				Protocol: hints.Protocol,
+				Addr:     addr,
+			}
+			result = append(result, info)
+		} else if hints == nil || hints.Family == unix.AF_INET6 || hints.Family == unix.AF_UNSPEC {
+			// IPv6 address
+			addr := &unix.SockaddrInet6{Port: port}
+			copy(addr.Addr[:], ip.To16())
+
+			info := AddrInfo{
+				Family:   unix.AF_INET6,
+				SockType: hints.SockType,
+				Protocol: hints.Protocol,
+				Addr:     addr,
+			}
+			result = append(result, info)
+		}
+	}
+
+	return result, nil
 }
 
 func (t network) RecvFrom(ctx context.Context, fd int, vecs [][]byte, oob []byte, flags int) (int, int, unix.Sockaddr, error) {

@@ -13,6 +13,7 @@ import (
 	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
 	"github.com/asparkoffire/wasinet/wasinet/ffiguest"
 	"github.com/asparkoffire/wasinet/wasinet/stdlib/wasip1syscall"
+	"golang.org/x/sys/unix"
 )
 
 func TranslateErrno(err error) syscall.Errno {
@@ -458,5 +459,167 @@ func SocketAddrIP(fn AddrIPFn) AddrIPHostFn {
 		}
 
 		return TranslateErrno(ffi.Uint32Write(m, unsafe.Pointer(ipreslen), uint32(len(buf))))
+	}
+}
+
+type GetAddrInfoFn func(ctx context.Context, node, service string, hints *AddrInfo) ([]AddrInfo, error)
+type GetAddrInfoHostFn func(
+	ctx context.Context,
+	m ffi.Memory,
+	nodeptr uintptr, nodelen uint32,
+	serviceptr uintptr, servicelen uint32,
+	hintsptr uintptr,
+	resptr uintptr, maxreslen uint32,
+	reslenptr uintptr,
+) syscall.Errno
+
+func SocketGetAddrInfo(fn GetAddrInfoFn) GetAddrInfoHostFn {
+	return func(
+		ctx context.Context,
+		m ffi.Memory,
+		nodeptr uintptr, nodelen uint32,
+		serviceptr uintptr, servicelen uint32,
+		hintsptr uintptr,
+		resptr uintptr, maxreslen uint32,
+		reslenptr uintptr,
+	) syscall.Errno {
+		// Read node and service strings
+		nodeBytes, ok := m.Read(unsafe.Pointer(nodeptr), nodelen)
+		if !ok {
+			return syscall.EFAULT
+		}
+		node := string(nodeBytes)
+
+		serviceBytes, ok := m.Read(unsafe.Pointer(serviceptr), servicelen)
+		if !ok {
+			return syscall.EFAULT
+		}
+		service := string(serviceBytes)
+
+		// Read hints if provided
+		var hints *AddrInfo
+		if hintsptr != 0 {
+			// Read flags, family, socktype, protocol
+			var flags, family, socktype, protocol int32
+
+			// Read hints structure fields (4 int32s in C struct addrinfo)
+			if flagsVal, ok := m.ReadUint32Le(unsafe.Pointer(hintsptr)); !ok {
+				return syscall.EFAULT
+			} else {
+				flags = int32(flagsVal)
+			}
+
+			if familyVal, ok := m.ReadUint32Le(unsafe.Pointer(hintsptr + 4)); !ok {
+				return syscall.EFAULT
+			} else {
+				family = int32(familyVal)
+			}
+
+			if socktypeVal, ok := m.ReadUint32Le(unsafe.Pointer(hintsptr + 8)); !ok {
+				return syscall.EFAULT
+			} else {
+				socktype = int32(socktypeVal)
+			}
+
+			if protocolVal, ok := m.ReadUint32Le(unsafe.Pointer(hintsptr + 12)); !ok {
+				return syscall.EFAULT
+			} else {
+				protocol = int32(protocolVal)
+			}
+
+			// Convert WASI family to host family
+			if family == 2 { // WASI_AF_INET
+				family = syscall.AF_INET
+			} else if family == 3 { // WASI_AF_INET6
+				family = syscall.AF_INET6
+			}
+
+			hints = &AddrInfo{
+				Flags:    flags,
+				Family:   family,
+				SockType: socktype,
+				Protocol: protocol,
+			}
+		}
+
+		// Call the implementation function
+		addrInfos, err := fn(ctx, node, service, hints)
+		if err != nil {
+			return TranslateErrno(err)
+		}
+
+		// Write results to memory
+		maxAddrs := int(maxreslen) / 20 // Size of addrinfo struct in bytes (estimate)
+		if maxAddrs > len(addrInfos) {
+			maxAddrs = len(addrInfos)
+		}
+
+		// Write the number of results
+		if !m.WriteUint32Le(unsafe.Pointer(reslenptr), uint32(maxAddrs)) {
+			return syscall.EFAULT
+		}
+
+		// Write each AddrInfo result
+		for i := 0; i < maxAddrs; i++ {
+			addrInfo := addrInfos[i]
+
+			// Calculate offset for this addrinfo struct
+			offset := resptr + uintptr(i*20) // Size of serialized addrinfo struct
+
+			// Write flags, family, socktype, protocol
+			if !m.WriteUint32Le(unsafe.Pointer(offset), uint32(addrInfo.Flags)) {
+				return syscall.EFAULT
+			}
+
+			// Convert host family back to WASI family
+			wasiFamily := addrInfo.Family
+			if wasiFamily == syscall.AF_INET {
+				wasiFamily = 2 // WASI_AF_INET
+			} else if wasiFamily == syscall.AF_INET6 {
+				wasiFamily = 3 // WASI_AF_INET6
+			}
+
+			if !m.WriteUint32Le(unsafe.Pointer(offset+4), uint32(wasiFamily)) {
+				return syscall.EFAULT
+			}
+
+			if !m.WriteUint32Le(unsafe.Pointer(offset+8), uint32(addrInfo.SockType)) {
+				return syscall.EFAULT
+			}
+
+			if !m.WriteUint32Le(unsafe.Pointer(offset+12), uint32(addrInfo.Protocol)) {
+				return syscall.EFAULT
+			}
+
+			// Marshal sockaddr struct
+			if addrInfo.Addr != nil {
+				rsa, err := wasip1syscall.Sockaddr(addrInfo.Addr)
+				if err != nil {
+					continue
+				}
+
+				// Write pointer to sockaddr data (16 bytes offset is for addrlen field in C struct)
+				addrPtr := offset + 16
+
+				// Calculate size based on sockaddr type
+				var addrSize uint32
+				switch addrInfo.Addr.(type) {
+				case *unix.SockaddrInet4:
+					addrSize = 16 // SockaddrInet4 size
+				case *unix.SockaddrInet6:
+					addrSize = 28 // SockaddrInet6 size
+				default:
+					addrSize = 16 // Fallback size
+				}
+
+				// Write the raw sockaddr data
+				sockaddrBytes := unsafe.Slice((*byte)(unsafe.Pointer(rsa)), addrSize)
+				if !m.Write(unsafe.Pointer(addrPtr), sockaddrBytes) {
+					return syscall.EFAULT
+				}
+			}
+		}
+
+		return ffierrors.ErrnoSuccess()
 	}
 }

@@ -116,6 +116,17 @@ func Module(runtime wazero.Runtime, wnet wnetruntime.Socket) wazero.HostModuleBu
 		NewFunctionBuilder().WithFunc(func(
 		ctx context.Context,
 		m api.Module,
+		nodeptr uint32, nodelen uint32,
+		serviceptr uint32, servicelen uint32,
+		hintsptr uint32,
+		resptr uint32, maxreslen uint32,
+		reslenptr uint32,
+	) uint32 {
+		return uint32(wnetruntime.SocketGetAddrInfo(wnet.GetAddrInfo)(ctx, Memory(m.Memory()), uintptr(nodeptr), nodelen, uintptr(serviceptr), servicelen, uintptr(hintsptr), uintptr(resptr), maxreslen, uintptr(reslenptr)))
+	}).Export("sock_getaddrinfo").
+		NewFunctionBuilder().WithFunc(func(
+		ctx context.Context,
+		m api.Module,
 		fd int32,
 		iovs uint32, iovslen uint32,
 		oobptr uint32, ooblen uint32,
