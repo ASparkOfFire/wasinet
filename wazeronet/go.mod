@@ -1,4 +1,4 @@
-module github.com/egdaemon/wasinet/wazeronet
+module github.com/asparkoffire/wasinet/wazeronet
 
 go 1.23.4
 

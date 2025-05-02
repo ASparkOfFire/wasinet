@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/asparkoffire/wasinet/wazeronet"
 	"github.com/egdaemon/wasinet/wasinet/testx"
 	"github.com/egdaemon/wasinet/wasinet/wnetruntime"
-	"github.com/egdaemon/wasinet/wazeronet"
 	"github.com/stretchr/testify/require"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"

@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
-	"github.com/egdaemon/wasinet/wasinet/ffierrors"
-	"github.com/egdaemon/wasinet/wasinet/ffiguest"
-	"github.com/egdaemon/wasinet/wasinet/stdlib/wasip1syscall"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
+	"github.com/asparkoffire/wasinet/wasinet/ffiguest"
+	"github.com/asparkoffire/wasinet/wasinet/stdlib/wasip1syscall"
 )
 
 func TranslateErrno(err error) syscall.Errno {

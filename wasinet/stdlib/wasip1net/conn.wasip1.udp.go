@@ -7,7 +7,7 @@ import (
 	"net/netip"
 	"syscall"
 
-	"github.com/egdaemon/wasinet/wasinet/stdlib/wasip1syscall"
+	"github.com/asparkoffire/wasinet/wasinet/stdlib/wasip1syscall"
 )
 
 func ipToSockaddr(family int, ip net.IP, port int, zone string) (syscall.Sockaddr, error) {

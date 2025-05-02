@@ -3,7 +3,7 @@
 // Package autohijack automatically highjack the net.DefaultResolver
 package autohijack
 
-import "github.com/egdaemon/wasinet/wasinet"
+import "github.com/asparkoffire/wasinet/wasinet"
 
 func init() {
 	wasinet.Hijack()

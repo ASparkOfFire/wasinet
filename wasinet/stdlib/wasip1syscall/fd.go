@@ -8,8 +8,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
-	"github.com/egdaemon/wasinet/wasinet/ffierrors"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
 )
 
 func Accept(fd int) (nfd int, addr RawSocketAddress, err error) {

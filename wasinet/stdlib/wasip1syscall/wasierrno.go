@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/egdaemon/wasinet/wasinet/ffierrors"
+	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
 )
 
 const (

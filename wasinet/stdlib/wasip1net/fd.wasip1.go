@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/egdaemon/wasinet/wasinet/ffierrors"
-	"github.com/egdaemon/wasinet/wasinet/internal/errorsx"
-	"github.com/egdaemon/wasinet/wasinet/stdlib/wasip1syscall"
+	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
+	"github.com/asparkoffire/wasinet/wasinet/internal/errorsx"
+	"github.com/asparkoffire/wasinet/wasinet/stdlib/wasip1syscall"
 )
 
 const (

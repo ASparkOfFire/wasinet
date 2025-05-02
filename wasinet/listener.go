@@ -7,8 +7,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/egdaemon/wasinet/wasinet/stdlib/wasip1net"
-	"github.com/egdaemon/wasinet/wasinet/stdlib/wasip1syscall"
+	"github.com/asparkoffire/wasinet/wasinet/stdlib/wasip1net"
+	"github.com/asparkoffire/wasinet/wasinet/stdlib/wasip1syscall"
 )
 
 // Listen announces on the local network address.

@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
-	"github.com/egdaemon/wasinet/wasinet/internal/errorsx"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/internal/errorsx"
 )
 
 const (

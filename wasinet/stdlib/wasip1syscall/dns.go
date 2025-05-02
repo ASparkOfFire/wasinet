@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
-	"github.com/egdaemon/wasinet/wasinet/ffierrors"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
 )
 
 func networkip(network string) string {

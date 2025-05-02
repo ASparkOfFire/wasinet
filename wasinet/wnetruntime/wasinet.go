@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/egdaemon/wasinet/wasinet/internal/langx"
+	"github.com/asparkoffire/wasinet/wasinet/internal/langx"
 	"golang.org/x/sys/unix"
 )
 

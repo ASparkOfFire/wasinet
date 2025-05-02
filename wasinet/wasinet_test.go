@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/egdaemon/wasinet/wasinet"
+	"github.com/asparkoffire/wasinet/wasinet"
 	"github.com/stretchr/testify/require"
 )
 

@@ -5,7 +5,7 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/egdaemon/wasinet/wasinet/internal/langx"
+	"github.com/asparkoffire/wasinet/wasinet/internal/langx"
 )
 
 type addressable interface {

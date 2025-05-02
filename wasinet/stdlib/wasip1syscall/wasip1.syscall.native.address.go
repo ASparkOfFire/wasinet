@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
 	"golang.org/x/sys/unix"
 )
 

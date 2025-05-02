@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/egdaemon/wasinet/wasinet/ffi"
-	"github.com/egdaemon/wasinet/wasinet/ffierrors"
-	"github.com/egdaemon/wasinet/wasinet/internal/errorsx"
+	"github.com/asparkoffire/wasinet/wasinet/ffi"
+	"github.com/asparkoffire/wasinet/wasinet/ffierrors"
+	"github.com/asparkoffire/wasinet/wasinet/internal/errorsx"
 	"golang.org/x/sys/unix"
 )
 

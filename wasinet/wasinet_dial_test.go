@@ -7,8 +7,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/egdaemon/wasinet/wasinet"
-	"github.com/egdaemon/wasinet/wasinet/testx"
+	"github.com/asparkoffire/wasinet/wasinet"
+	"github.com/asparkoffire/wasinet/wasinet/testx"
 	"github.com/stretchr/testify/require"
 )
 
